@@ -55,6 +55,10 @@ function deactivate_product_page() {
 	Product_Page_Deactivator::deactivate();
 }
 
+add_filter( 'body_class', function( $classes ) {
+    return array_merge( $classes, array( 'woocommerce', 'woocommerce-page' ) );
+}, 99 );
+
 register_activation_hook( __FILE__, 'activate_product_page' );
 register_deactivation_hook( __FILE__, 'deactivate_product_page' );
 

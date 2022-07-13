@@ -52,10 +52,26 @@ class Product_Page_Admin {
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
 
+		add_shortcode( "single_product", [$this, "single_product_view"] );
 	}
 
 	/**
 	 * Register the stylesheets for the admin area.
+	 *
+	 * @since    1.0.0
+	 */
+	function admin_styles(){
+		?>
+		<style>
+			th#single_product {
+				width: 170px;
+			}
+		</style>
+		<?php
+	}
+
+	/**
+	 * Register the stylesheets for the public area.
 	 *
 	 * @since    1.0.0
 	 */
@@ -73,12 +89,12 @@ class Product_Page_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/product-page-admin.css', array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/product-page.css', array(), $this->version, 'all' );
 
 	}
 
 	/**
-	 * Register the JavaScript for the admin area.
+	 * Register the JavaScript for the public area.
 	 *
 	 * @since    1.0.0
 	 */
@@ -96,25 +112,10 @@ class Product_Page_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/product-page-admin.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/product-page.js', array( 'jquery' ), $this->version, false );
 
 	}
-	function remove_all_product_tabs( $tabs ) {
-		unset( $tabs['description'] );        // Remove the description tab
-		unset( $tabs['reviews'] );       // Remove the reviews tab
-		unset( $tabs['additional_information'] );    // Remove the additional information tab
-		return $tabs;
-	  }
-
-	function woocommerce_product_tab_remove($the_content){
-		if(strstr( $the_content, '[product_page' )){
-			add_filter( 'woocommerce_product_tabs', [$this, 'remove_all_product_tabs'], 11 );
-			remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_upsell_display', 20 );
-			remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_related_products', 20 );
-		}
-		return $the_content;
-	}
-
+	
 	function custom_product_columnns( $columns ){
 		$newColumns = $columns;
 		foreach($columns as $key => $column){
@@ -125,16 +126,140 @@ class Product_Page_Admin {
 		foreach($newColumns as $key1 => $val){
 			$columns[$key1] = $val;
 			if($i === 2){
-				$columns['product_page'] = 'Shortcode';
+				$columns['single_product'] = 'Shortcode';
 			}
 			$i++;
 		}
 	
 		return $columns;
 	}
+
 	function custom_product_columnns_value( $column, $postid ) {
-		if ( $column == 'product_page' ) {
-			echo '<input type="text" readonly value=\'[product_page id="'.$postid.'"]\'>';
+		if ( $column == 'single_product' ) {
+			echo '<input type="text" readonly value=\'[single_product id="'.$postid.'"]\'>';
 		}
+	}
+
+	function single_product_view($atts){
+		ob_start();
+		$atts = shortcode_atts(
+			array(
+				'id' => null,
+			), $atts, 'single_product' 
+		);
+
+		if ( empty( $atts ) ) {
+			return '';
+		}
+
+		if ( ! isset( $atts['id'] ) && ! isset( $atts['sku'] ) ) {
+			return '';
+		}
+
+		$args = array(
+			'posts_per_page'      => 1,
+			'post_type'           => 'product',
+			'post_status'         => ( ! empty( $atts['status'] ) ) ? $atts['status'] : 'publish',
+			'ignore_sticky_posts' => 1,
+			'no_found_rows'       => 1,
+		);
+
+		if ( isset( $atts['sku'] ) ) {
+			$args['meta_query'][] = array(
+				'key'     => '_sku',
+				'value'   => sanitize_text_field( $atts['sku'] ),
+				'compare' => '=',
+			);
+
+			$args['post_type'] = array( 'product', 'product_variation' );
+		}
+
+		if ( isset( $atts['id'] ) ) {
+			$args['p'] = absint( $atts['id'] );
+		}
+
+		// Don't render titles if desired.
+		if ( isset( $atts['show_title'] ) && ! $atts['show_title'] ) {
+			remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_title', 5 );
+		}
+
+		// Change form action to avoid redirect.
+		add_filter( 'woocommerce_add_to_cart_form_action', '__return_empty_string' );
+
+		$single_product = new WP_Query( $args );
+
+		$preselected_id = '0';
+
+		// Check if sku is a variation.
+		if ( isset( $atts['sku'] ) && $single_product->have_posts() && 'product_variation' === $single_product->post->post_type ) {
+
+			$variation  = wc_get_product_object( 'variation', $single_product->post->ID );
+			$attributes = $variation->get_attributes();
+
+			// Set preselected id to be used by JS to provide context.
+			$preselected_id = $single_product->post->ID;
+
+			// Get the parent product object.
+			$args = array(
+				'posts_per_page'      => 1,
+				'post_type'           => 'product',
+				'post_status'         => 'publish',
+				'ignore_sticky_posts' => 1,
+				'no_found_rows'       => 1,
+				'p'                   => $single_product->post->post_parent,
+			);
+
+			$single_product = new WP_Query( $args );
+			?>
+			<script type="text/javascript">
+				jQuery( function( $ ) {
+					var $variations_form = $( '[data-product-page-preselected-id="<?php echo esc_attr( $preselected_id ); ?>"]' ).find( 'form.variations_form' );
+
+					<?php foreach ( $attributes as $attr => $value ) { ?>
+						$variations_form.find( 'select[name="<?php echo esc_attr( $attr ); ?>"]' ).val( '<?php echo esc_js( $value ); ?>' );
+					<?php } ?>
+				});
+			</script>
+			<?php
+		}
+
+		// For "is_single" to always make load comments_template() for reviews.
+		$single_product->is_single = true;
+
+		ob_start();
+
+		global $wp_query;
+
+		// Backup query object so following loops think this is a product page.
+		$previous_wp_query = $wp_query;
+		// @codingStandardsIgnoreStart
+		$wp_query          = $single_product;
+		// @codingStandardsIgnoreEnd
+
+		wp_enqueue_script( 'wc-single-product' );
+
+		while ( $single_product->have_posts() ) {
+			$single_product->the_post()
+			?>
+			<div class="single-product" data-product-page-preselected-id="<?php echo esc_attr( $preselected_id ); ?>">
+				<?php require_once plugin_dir_path( __FILE__ )."partials/product-page-display.php"; ?>
+			</div>
+			<?php
+		}
+
+		// Restore $previous_wp_query and reset post data.
+		// @codingStandardsIgnoreStart
+		$wp_query = $previous_wp_query;
+		// @codingStandardsIgnoreEnd
+		wp_reset_postdata();
+
+		// Re-enable titles if they were removed.
+		if ( isset( $atts['show_title'] ) && ! $atts['show_title'] ) {
+			add_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_title', 5 );
+		}
+
+		remove_filter( 'woocommerce_add_to_cart_form_action', '__return_empty_string' );
+
+		return '<div class="woocommerce">' . ob_get_clean() . '</div>';
 	}
 }
