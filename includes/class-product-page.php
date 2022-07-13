@@ -149,6 +149,7 @@ class Product_Page {
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+		$this->loader->add_filter( 'the_content', $plugin_admin, 'woocommerce_product_tab_remove' );
 		$this->loader->add_filter( 'manage_edit-product_columns', $plugin_admin, 'custom_product_columnns', 15 );
 		$this->loader->add_filter( 'manage_product_posts_custom_column', $plugin_admin, 'custom_product_columnns_value', 10, 2 );
 	}

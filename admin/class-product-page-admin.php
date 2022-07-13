@@ -99,6 +99,21 @@ class Product_Page_Admin {
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/product-page-admin.js', array( 'jquery' ), $this->version, false );
 
 	}
+	function remove_all_product_tabs( $tabs ) {
+		unset( $tabs['description'] );        // Remove the description tab
+		unset( $tabs['reviews'] );       // Remove the reviews tab
+		unset( $tabs['additional_information'] );    // Remove the additional information tab
+		return $tabs;
+	  }
+
+	function woocommerce_product_tab_remove($the_content){
+		if(strstr( $the_content, '[product_page' )){
+			add_filter( 'woocommerce_product_tabs', [$this, 'remove_all_product_tabs'], 11 );
+			remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_upsell_display', 20 );
+			remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_related_products', 20 );
+		}
+		return $the_content;
+	}
 
 	function custom_product_columnns( $columns ){
 		$newColumns = $columns;
