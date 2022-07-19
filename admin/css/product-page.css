@@ -1,0 +1,36 @@
+.woocommerce img {
+    border-radius: 14px !important;
+}
+.shop-quick-view {
+    border-radius: 12px;
+}
+.jdgm-rev .jdgm-rev__pic-img {
+    border-radius: 0 !important;
+}
+.woostify-sale-notification-box img {
+    border-radius: 0 !important;
+}
+.priceBadge {
+    display: inline-flex;
+    background: #000;
+    padding: 3px;
+    border-radius: 3px;
+    font-size: 12px;
+    align-items: center;
+    color: white;
+    font-weight: 700;
+    margin-left: 10px;
+}
+.priceBadge img {
+    width: 14px;
+    margin-right: 5px;
+}
+form.cart button.single_add_to_cart_button:not(.woostify-buy-now) {
+    background: transparent !important;
+    color: #7a7a7add;
+    border: 2px solid;
+}
+form.cart button.single_add_to_cart_button:hover {
+    box-shadow: 0px 0px 3px 0px;
+    color: #7a7a7add !important;
+}

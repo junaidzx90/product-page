@@ -262,4 +262,21 @@ class Product_Page_Admin {
 
 		return '<div class="woocommerce">' . ob_get_clean() . '</div>';
 	}
+
+	function woocommerce_single_product_summary_script( ){
+		global $product;
+		$regular_price = $product->get_regular_price();
+		$price = $product->get_price();
+
+		$save = ((!empty($regular_price))?floatval($regular_price) - floatval($price): 0);
+		?>
+		<script>
+			let currencySym = jQuery(".woocommerce-Price-currencySymbol")[0].outerHTML;
+			<?php if($save > 0){ ?>
+			let saved = "<?php echo $save ?>";
+			jQuery("p.price").first().append(`<div class="priceBadge"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiIGZpbGw9IiNmZmYiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgeG1sbnM6dj0iaHR0cHM6Ly92ZWN0YS5pby9uYW5vIj48cGF0aCBkPSJNOTcxLjcgNDY5LjlMNTMxLjQgMjhjLTExLjgtMTEuOS0yNy44LTE4LjUtNDQuNS0xOC41aC00MTRDMzguMiA5LjUgMTAgMzcuNyAxMCA3Mi40djQxNGMwIDE2LjcgNi42IDMyLjcgMTguNCA0NC41TDQ2OS41IDk3MmMxMi4zIDEyLjMgMjguNCAxOC40IDQ0LjQgMTguNCAxNi4xIDAgMzIuMi02LjEgNDQuNC0xOC40bDQxMy4xLTQxMy4yYzI0LjctMjQuNCAyNC43LTY0LjIuMy04OC45aDB6TTgyMS4yIDUzNkw1MzUuNiA4MjEuNWEzMC41NCAzMC41NCAwIDAgMS00My4zIDBMMTMyLjUgNDYxLjdWMTYyLjhjMC0xNi45IDEzLjctMzAuNiAzMC42LTMwLjZoMjk5bDM1OS4xIDM2MC41YzEyIDExLjkgMTEuOSAzMS4zIDAgNDMuM2gwek00MzguOCAzNDYuN2MwIDUwLjgtNDEuMiA5Mi05MS45IDkyLTUwLjggMC05MS45LTQxLjItOTEuOS05MnM0MS4xLTkyIDkxLjktOTJjNTAuNy4xIDkxLjkgNDEuMiA5MS45IDkyeiIvPjwvc3ZnPg=="/>SAVE&nbsp;${currencySym}${parseFloat(saved).toFixed(2)}</div>`);
+			<?php } ?>
+		</script>
+		<?php
+	}
 }

@@ -152,6 +152,9 @@ class Product_Page {
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_filter( 'manage_edit-product_columns', $plugin_admin, 'custom_product_columnns', 15 );
 		$this->loader->add_filter( 'manage_product_posts_custom_column', $plugin_admin, 'custom_product_columnns_value', 10, 2 );
+
+
+		$this->loader->add_filter( 'woocommerce_before_add_to_cart_form', $plugin_admin, 'woocommerce_single_product_summary_script', 15 );
 	}
 
 	/**
